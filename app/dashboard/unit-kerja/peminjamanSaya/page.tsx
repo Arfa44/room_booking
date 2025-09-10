@@ -2,9 +2,9 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
-import SidebarUniversal from "@/components/layout/SidebarUniversal";
 import FileUpload from "@/components/FileUpload";
+import SidebarUniversal from "@/components/layout/SidebarUniversal";
+import { useEffect, useState } from "react";
 
 interface Peminjaman {
   id: number;
@@ -102,6 +102,9 @@ const handleFileUpload = (filePath: string) => {
   const handleChange = (key: string, value: string) => setForm(prev => ({ ...prev, [key]: value }));
 
   const handleEdit = (p: Peminjaman) => {
+    if (p.status_peminjaman !== "menunggu persetujuan") {
+      return alert("Hanya bisa edit jika status masih menunggu persetujuan");
+    }
     const now = new Date();
     const duaHariSebelum = new Date(p.waktu_peminjaman_mulai);
     duaHariSebelum.setDate(duaHariSebelum.getDate() - 2);
@@ -239,13 +242,13 @@ const handleCancel = () => {
             <input type="datetime-local" value={form.waktu_peminjaman_selesai} onChange={e => handleChange("waktu_peminjaman_selesai", e.target.value)} className="border p-2 w-full rounded" required />
           </div>
 
-<div>
-  <label className="block mb-1 font-semibold">Surat Peminjaman</label>
-  <FileUpload 
-    onFileUpload={handleFileUpload} 
-    existingFile={form.surat_peminjaman}
-  />
-</div>
+          <div>
+            <label className="block mb-1 font-semibold">Surat Peminjaman</label>
+            <FileUpload 
+              onFileUpload={handleFileUpload} 
+              existingFile={form.surat_peminjaman}
+            />
+          </div>
 
           <div className="flex gap-2">
             <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">{editingId ? "Update" : "Ajukan"}</button>

@@ -1,9 +1,9 @@
 //app/dashboard/dosen/peminjamanSaya/page.tsx
 "use client";
 
+import FileUpload from "@/components/FileUpload";
 import SidebarUniversal from "@/components/layout/SidebarUniversal";
 import { useEffect, useState } from "react";
-import FileUpload from "@/components/FileUpload";
 
 interface Peminjaman {
   id: number;
@@ -117,6 +117,10 @@ const handleFileUpload = (filePath: string) => {
 }
 
 const handleEdit = (p: Peminjaman) => {
+  if (p.status_peminjaman !== "menunggu persetujuan") {
+    return alert("Hanya bisa edit jika status masih menunggu persetujuan");
+  }
+
   const now = new Date();
   const duaHariSebelum = new Date(p.waktu_peminjaman_mulai);
   duaHariSebelum.setDate(duaHariSebelum.getDate() - 2);
