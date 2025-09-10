@@ -4,6 +4,7 @@
 
 import SidebarUniversal from "@/components/layout/SidebarUniversal";
 import { useEffect, useState } from 'react';
+import HakAksesChart from "./HakAksesChart";
 
 type HakAkses = {
   id: number;
@@ -248,6 +249,10 @@ export default function HakAksesPage() {
               </button>
             </div>
           </form>
+
+          <div className="mt-8">
+            <HakAksesChart roles={roles} hakAkses={hakAkses} />
+          </div>
 
           {/* Table */}
           <h2 className="text-lg font-bold mb-2">Daftar Hak Akses</h2>

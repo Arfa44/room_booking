@@ -1,6 +1,4 @@
 //app/choose-role/page.tsx
-
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -16,18 +14,13 @@ export default function ChooseRolePage() {
   const [roles, setRoles] = useState<Role[]>([]);
 
   useEffect(() => {
-    // Ambil data role langsung dari API, kirim cookie HttpOnly
-    fetch("/api/auth/roles", {
-      credentials: "include", // penting supaya cookie HttpOnly ikut terkirim
-    })
+    fetch("/api/auth/roles", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.roles) {
           setRoles(data.roles);
-
-          // Kalau hanya 1 role → langsung redirect
           if (data.roles.length === 1) {
-            redirectToDashboard(data.roles[0].id);
+            handleSelectRole(data.roles[0].nama_role);
           }
         } else {
           router.push("/login");
@@ -36,11 +29,19 @@ export default function ChooseRolePage() {
       .catch(() => router.push("/login"));
   }, [router]);
 
-  const redirectToDashboard = (roleId: number) => {
-    if (roleId === 1) router.push("/dashboard/admin");
-    if (roleId === 2) router.push("/dashboard/dosen");
-    if (roleId === 3) router.push("/dashboard/mahasiswa");
-    if (roleId === 4) router.push("/dashboard/unit-kerja");
+  const handleSelectRole = async (roleName: string) => {
+    // panggil API untuk simpan cookie
+    await fetch("/api/auth/select-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: roleName }),
+    });
+
+    // redirect sesuai role
+    if (roleName.toLowerCase() === "admin") router.push("/dashboard/admin");
+    if (roleName.toLowerCase() === "dosen") router.push("/dashboard/dosen");
+    if (roleName.toLowerCase() === "mahasiswa") router.push("/dashboard/mahasiswa");
+    if (roleName.toLowerCase() === "unit kerja") router.push("/dashboard/unit-kerja");
   };
 
   return (
@@ -51,7 +52,7 @@ export default function ChooseRolePage() {
           <button
             key={role.id}
             className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            onClick={() => redirectToDashboard(role.id)}
+            onClick={() => handleSelectRole(role.nama_role)}
           >
             {role.nama_role}
           </button>
