@@ -9,6 +9,10 @@ interface Role {
   nama_role: string;
 }
 
+// helper slugify → ubah "Unit Kerja" jadi "unit-kerja"
+const slugify = (str: string) =>
+  str.toLowerCase().trim().replace(/\s+/g, "-");
+
 export default function ChooseRolePage() {
   const router = useRouter();
   const [roles, setRoles] = useState<Role[]>([]);
@@ -30,18 +34,17 @@ export default function ChooseRolePage() {
   }, [router]);
 
   const handleSelectRole = async (roleName: string) => {
-    // panggil API untuk simpan cookie
+    const roleSlug = slugify(roleName);
+
+    // simpan cookie role dalam bentuk slug
     await fetch("/api/auth/select-role", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: roleName }),
+      body: JSON.stringify({ role: roleSlug }),
     });
 
-    // redirect sesuai role
-    if (roleName.toLowerCase() === "admin") router.push("/dashboard/admin");
-    if (roleName.toLowerCase() === "dosen") router.push("/dashboard/dosen");
-    if (roleName.toLowerCase() === "mahasiswa") router.push("/dashboard/mahasiswa");
-    if (roleName.toLowerCase() === "unit kerja") router.push("/dashboard/unit-kerja");
+    // redirect ke dashboard sesuai slug
+    router.push(`/dashboard/${roleSlug}`);
   };
 
   return (

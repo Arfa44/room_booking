@@ -56,10 +56,22 @@ const SidebarUniversal = ({ collapsed, setCollapsed }: SidebarUniversalProps) =>
     if (roleFromPath) setCurrentRole(Number(roleFromPath[0]));
   }, [pathname]);
 
-  const redirectToDashboard = (roleId: number) => {
-    setCurrentRole(roleId);
-    router.push(`/dashboard/${roleMap[roleId]}`);
-  };
+const redirectToDashboard = async (roleId: number) => {
+  setCurrentRole(roleId);
+
+  try {
+    await fetch("/api/auth/select-role", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ role: roleMap[roleId] }),
+    });
+  } catch (error) {
+    console.error("Gagal set role:", error);
+  }
+
+  router.push(`/dashboard/${roleMap[roleId]}`);
+};
+
 
   const handleLogout = async () => {
     const confirmLogout = window.confirm("Apakah Anda yakin ingin logout?");
