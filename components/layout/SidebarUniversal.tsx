@@ -17,12 +17,17 @@ interface Role {
   nama_role: string;
 }
 
+// role map: id → slug
 const roleMap: Record<number, string> = {
   1: "admin",
   2: "dosen",
   3: "mahasiswa",
   4: "unit-kerja",
 };
+
+// helper slugify untuk fallback
+const slugify = (str: string) =>
+  str.toLowerCase().trim().replace(/\s+/g, "-");
 
 const SidebarUniversal = ({ collapsed, setCollapsed }: SidebarUniversalProps) => {
   const router = useRouter();
@@ -31,16 +36,17 @@ const SidebarUniversal = ({ collapsed, setCollapsed }: SidebarUniversalProps) =>
   const [roles, setRoles] = useState<Role[]>([]);
   const [currentRole, setCurrentRole] = useState<number | null>(null);
 
-  // Ambil roles dari API saat pertama kali mount
+  // Ambil roles dari API saat pertama mount
   useEffect(() => {
     fetch("/api/auth/roles", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.roles) {
           setRoles(data.roles);
-          // Sesuaikan currentRole dengan pathname dulu
-          const roleFromPath = Object.entries(roleMap).find(([id, roleName]) =>
-            pathname?.includes(roleName)
+
+          // Sesuaikan currentRole dengan pathname
+          const roleFromPath = Object.entries(roleMap).find(([id, slug]) =>
+            pathname?.includes(slug)
           );
           setCurrentRole(roleFromPath ? Number(roleFromPath[0]) : data.roles[0]?.id);
         }
@@ -50,32 +56,30 @@ const SidebarUniversal = ({ collapsed, setCollapsed }: SidebarUniversalProps) =>
 
   // Update currentRole saat route berubah
   useEffect(() => {
-    const roleFromPath = Object.entries(roleMap).find(([id, roleName]) =>
-      pathname?.includes(roleName)
+    const roleFromPath = Object.entries(roleMap).find(([id, slug]) =>
+      pathname?.includes(slug)
     );
     if (roleFromPath) setCurrentRole(Number(roleFromPath[0]));
   }, [pathname]);
 
-const redirectToDashboard = async (roleId: number) => {
-  setCurrentRole(roleId);
+  const redirectToDashboard = async (roleId: number) => {
+    setCurrentRole(roleId);
 
-  try {
-    await fetch("/api/auth/select-role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: roleMap[roleId] }),
-    });
-  } catch (error) {
-    console.error("Gagal set role:", error);
-  }
+    try {
+      await fetch("/api/auth/select-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: roles.find(r => r.id === roleId)?.nama_role || "" }),
+      });
+    } catch (error) {
+      console.error("Gagal set role:", error);
+    }
 
-  router.push(`/dashboard/${roleMap[roleId]}`);
-};
-
+    router.push(`/dashboard/${roleMap[roleId]}`);
+  };
 
   const handleLogout = async () => {
-    const confirmLogout = window.confirm("Apakah Anda yakin ingin logout?");
-        if (!confirmLogout) return;
+    if (!window.confirm("Apakah Anda yakin ingin logout?")) return;
     try {
       await fetch("/api/auth/logout", { method: "POST" });
       router.push("/");
@@ -84,7 +88,7 @@ const redirectToDashboard = async (roleId: number) => {
     }
   };
 
-  // Menu berdasarkan role
+  // Menu navigasi per role
   const menuItems: Record<number, { href: string; icon: string; label: string }[]> = {
     1: [
       { href: "/dashboard/admin", icon: "📊", label: "Dashboard" },
@@ -127,21 +131,13 @@ const redirectToDashboard = async (roleId: number) => {
 
       {/* Logo */}
       <div className={`flex items-center gap-2 mb-6 ${collapsed ? "justify-center" : ""}`}>
-        <Image 
-          src="/Logo-PNC.png" 
-          alt="Logo PNC" 
-          width={40} 
-          height={40} 
-          className="min-w-[40px]" 
-        />
+        <Image src="/Logo-PNC.png" alt="Logo PNC" width={40} height={40} className="min-w-[40px]" />
         {!collapsed && (
-          <h1 className="text-lg font-semibold whitespace-nowrap leading-tight">
-            Sistem Peminjaman
-          </h1>
+          <h1 className="text-lg font-semibold whitespace-nowrap leading-tight">Sistem Peminjaman</h1>
         )}
       </div>
 
-      {/* Menu Navigasi */}
+      {/* Menu */}
       <nav className="flex-1 overflow-y-auto">
         <ul className="list-none p-0 space-y-2">
           {currentRole && menuItems[currentRole]?.map((item) => (
@@ -151,11 +147,7 @@ const redirectToDashboard = async (roleId: number) => {
                 className={`flex items-center gap-3 p-2 hover:bg-blue-700 dark:hover:bg-blue-900 rounded ${collapsed ? "justify-center" : ""}`}
               >
                 <span className="text-lg flex-shrink-0">{item.icon}</span>
-                {!collapsed && (
-                  <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">
-                    {item.label}
-                  </span>
-                )}
+                {!collapsed && <span className="text-sm whitespace-nowrap overflow-hidden text-ellipsis">{item.label}</span>}
               </Link>
             </li>
           ))}
@@ -163,30 +155,16 @@ const redirectToDashboard = async (roleId: number) => {
       </nav>
 
       {/* Dropdown ganti role */}
-      {roles.length > 1 && (
-        <div className="mt-4">
-          {!collapsed ? (
-            <select
-              value={currentRole ?? ""}
-              onChange={(e) => redirectToDashboard(Number(e.target.value))}
-              className="w-full bg-blue-700 dark:bg-blue-900 text-white p-2 rounded text-sm"
-            >
-              {roles.map((role) => (
-                <option key={role.id} value={role.id}>
-                  {role.nama_role}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <button 
-              onClick={() => currentRole && redirectToDashboard(currentRole)} 
-              className="w-full p-2 bg-blue-700 dark:bg-blue-900 rounded text-sm flex justify-center"
-              title="Ganti Role"
-            >
-              🔄
-            </button>
-          )}
-        </div>
+      {roles.length > 1 && !collapsed && (
+        <select
+          value={currentRole ?? ""}
+          onChange={(e) => redirectToDashboard(Number(e.target.value))}
+          className="w-full bg-blue-700 dark:bg-blue-900 text-white p-2 rounded text-sm mt-4"
+        >
+          {roles.map((role) => (
+            <option key={role.id} value={role.id}>{role.nama_role}</option>
+          ))}
+        </select>
       )}
 
       {/* Theme Toggle & Logout */}

@@ -9,7 +9,6 @@ interface Role {
   nama_role: string;
 }
 
-// helper slugify → ubah "Unit Kerja" jadi "unit-kerja"
 const slugify = (str: string) =>
   str.toLowerCase().trim().replace(/\s+/g, "-");
 
@@ -36,14 +35,12 @@ export default function ChooseRolePage() {
   const handleSelectRole = async (roleName: string) => {
     const roleSlug = slugify(roleName);
 
-    // simpan cookie role dalam bentuk slug
     await fetch("/api/auth/select-role", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role: roleSlug }),
+      body: JSON.stringify({ role: roleName }),
     });
 
-    // redirect ke dashboard sesuai slug
     router.push(`/dashboard/${roleSlug}`);
   };
 
