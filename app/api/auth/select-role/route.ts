@@ -11,6 +11,7 @@ export async function POST(req: NextRequest) {
 
     // simpan role di cookie
     const res = NextResponse.json({ success: true });
+    res.cookies.delete("selectedRole");
     res.cookies.set("selectedRole", role.toLowerCase(), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
